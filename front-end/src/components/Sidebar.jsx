@@ -3,7 +3,9 @@ import {
   Home, Users, Palmtree, Briefcase, CardSim, UserCog,
   X, ChevronDown, ChevronsLeft, ChevronsRight, ShieldCheck,
   Printer,
-  Map
+  Map,
+  SettingsIcon,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from 'react-router-dom';
@@ -11,8 +13,10 @@ import { Link } from 'react-router-dom';
 const sidebarItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/map", label: "Live Map", icon: Map },
-  { path: "/user-management", label: "User Management", icon: UserCog },
-  { path: "/audit-logs", label: "Audit Logs", icon: ShieldCheck },
+  { path: "/alerts", label: "Alerts", icon: AlertTriangle },
+  { path: "/users", label: "User Management", icon: UserCog },
+  { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
+  {path: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {

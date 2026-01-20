@@ -12,12 +12,16 @@ export function TopNav({ onMenuClick }) {
             <Menu size={20} className="text-gray-700" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+            <div className="md:w-8 md:h-8 p-2 md:p-0 bg-red-600 rounded-lg flex items-center justify-center">
               <AlertTriangle className="text-white" size={20} />
             </div>
-            <span className="text-xl font-semibold text-gray-900">
-              RescueLink Response System
+            <div className='flex flex-col'>
+            <span className="md:text-xl text-base font-semibold text-gray-900">
+              RescueLink
             </span>
+            <p className='text-xs text-muted-foreground'>Emergency Response System</p>
+            </div>
+            
           </div>
         </div>
         

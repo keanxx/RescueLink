@@ -2,32 +2,38 @@ import { useState } from "react";
 import {
   Home, Users, Palmtree, Briefcase, CardSim, UserCog,
   X, ChevronDown, ChevronsLeft, ChevronsRight, ShieldCheck,
-  Printer,
-  Map,
-  SettingsIcon,
-  AlertTriangle
+  Printer, Map, SettingsIcon, AlertTriangle, LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const sidebarItems = [
-  { path: "/", label: "Dashboard", icon: Home },
+  { path: "/dashboard", label: "Dashboard", icon: Home },
   { path: "/map", label: "Live Map", icon: Map },
   { path: "/alerts", label: "Alerts", icon: AlertTriangle },
   { path: "/users", label: "User Management", icon: UserCog },
   { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
-  {path: "/settings", label: "Settings", icon: SettingsIcon },
+  { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {
   const [openSubmenus, setOpenSubmenus] = useState({});
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleSubmenu = (path) => {
     setOpenSubmenus((prev) => ({
       ...prev,
       [path]: !prev[path],
     }));
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   const renderMenu = (items, level = 0) => {
@@ -112,10 +118,49 @@ const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {
           </button>
         </div>
 
+        {/* User info section (NEW) */}
+        {user && (
+          <div className={cn(
+            "px-4 py-3 border-b border-gray-200",
+            isCollapsed ? "text-center" : ""
+          )}>
+            {isCollapsed ? (
+              <div className="w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 font-semibold">
+                  {user.name?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                <p className="text-xs text-gray-500">{user.email}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Scrollable menu */}
         <nav className={cn("flex-1 p-4 space-y-2 overflow-y-auto")}>
           {renderMenu(sidebarItems)}
         </nav>
+
+        {/* Logout button at bottom (NEW) */}
+        <div className={cn(
+          "p-4 border-t border-gray-200",
+          isCollapsed ? "flex justify-center" : ""
+        )}>
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "flex items-center px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-red-50 hover:text-red-600",
+              isCollapsed ? "justify-center w-12" : "space-x-3 w-full"
+            )}
+            title={isCollapsed ? "Logout" : ""}
+          >
+            <LogOut className="h-5 w-5" />
+            {!isCollapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
     </>
   );

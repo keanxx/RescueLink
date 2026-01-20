@@ -9,14 +9,14 @@ import {
 
 export default function TableFilters({ table }) {
   return (
-    <div className="flex items-center gap-4 bg-card p-4 rounded-lg border">
+    <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border">
       <Input
         placeholder="Search alerts..."
         value={table.getColumn("user")?.getFilterValue() ?? ""}
         onChange={(event) =>
           table.getColumn("user")?.setFilterValue(event.target.value)
         }
-        className="max-w-sm"
+        className="flex-1 min-w-[150px]"
       />
 
       <Select
@@ -25,7 +25,7 @@ export default function TableFilters({ table }) {
           table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
         }
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="min-w-[150px]">
           <SelectValue placeholder="All Status" />
         </SelectTrigger>
         <SelectContent>
@@ -36,13 +36,13 @@ export default function TableFilters({ table }) {
         </SelectContent>
       </Select>
 
-       <Select
+      <Select
         value={table.getColumn("severity")?.getFilterValue() ?? "all"}
         onValueChange={(value) =>
           table.getColumn("severity")?.setFilterValue(value === "all" ? "" : value)
         }
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="min-w-[150px]">
           <SelectValue placeholder="All Severity" />
         </SelectTrigger>
         <SelectContent>

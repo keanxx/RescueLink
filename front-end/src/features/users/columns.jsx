@@ -2,7 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserPen, UserRoundX } from "lucide-react";
 
-export const columns = [
+// Export a function that receives handlers
+export const createColumns = (onEdit, onDelete) => [
   {
     accessorKey: "name",
     header: "NAME",
@@ -19,11 +20,9 @@ export const columns = [
     accessorKey: "role",
     header: "ROLE",
     cell: ({ row }) => {
-
-   
       const role = row.original.role;
       const variantRole = {
-        Driver:'bg-gray-100 text-gray-700',
+        Driver: 'bg-gray-100 text-gray-700',
         Admin: "bg-blue-100 text-blue-700",
         Rescuer: "bg-green-100 text-green-700",
         Dispatcher: "bg-yellow-100 text-yellow-700",
@@ -33,7 +32,7 @@ export const columns = [
           {role}
         </Badge>
       );
-   }
+    }
   },
   {
     accessorKey: "contact",
@@ -65,20 +64,29 @@ export const columns = [
     id: "actions",
     header: "ACTIONS",
     cell: ({ row }) => {
+      const user = row.original;
 
       return (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="p-2 hover:bg-blue-100 rounded-lg transition-colors">
+          {/* Edit button - connected to onEdit */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+            onClick={() => onEdit(user)}
+          >
             <UserPen size={16} className="text-blue-600" />
           </Button>
 
-        
-            <Button variant="ghost" size="icon" className="p-2 hover:bg-red-100 rounded-lg transition-colors">
-              <UserRoundX size={16} className="text-red-600" />
-            </Button>
-
-
-        
+          {/* Delete button - connected to onDelete */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+            onClick={() => onDelete(user)}
+          >
+            <UserRoundX size={16} className="text-red-600" />
+          </Button>
         </div>
       );
     },

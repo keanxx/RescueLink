@@ -27,9 +27,7 @@ export const columns = [
     cell: ({ row }) => (
       <div>
         <div className="font-medium text-sm">{row.original.user}</div>
-        <div className="text-xs text-muted-foreground">
-          {row.original.device}
-        </div>
+        
       </div>
     ),
   },
@@ -48,12 +46,12 @@ export const columns = [
     cell: ({ row }) => {
       const status = row.original.status;
       const variantMap = {
-        Pending: "secondary",
-        Verified: "default",
-        Resolved: "outline",
+        Pending: "bg-orange-100 text-orange-700",
+        Verified: "bg-green-100 text-green-700",
+        Resolved: "bg-blue-100 text-blue-700",
       };
       return (
-        <Badge variant={variantMap[status]} className="font-medium">
+        <Badge className={`font-medium ${variantMap[status]}`}>
           {status}
         </Badge>
       );

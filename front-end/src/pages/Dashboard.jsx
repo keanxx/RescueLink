@@ -3,10 +3,11 @@ import React from 'react'
 
 import { StatCard } from '@/components/StatCard';
 import { AlertTriangle, Users, Car, Clock } from 'lucide-react';
+import LiveAlertsTable from '@/features/dashboard/live-alerts/live-alerts-table';
 
 const Dashboard = () => {
   return (
-        <div className="space-y-6">
+  <div className="space-y-6">
     <div>
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Real-time emergency response monitoring</p>
@@ -43,6 +44,8 @@ const Dashboard = () => {
           trend="12s faster"
         />
       </div>
+
+      <LiveAlertsTable/>
     </div>
   )
 }

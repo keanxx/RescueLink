@@ -11,12 +11,13 @@ export default function TableFilters({ table }) {
   return (
     <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border">
       <Input
-        placeholder="Search alerts..."
-        value={table.getColumn("user")?.getFilterValue() ?? ""}
+
+        placeholder="Search users..."
+        value={table.getColumn("name")?.getFilterValue() ?? ""}
         onChange={(event) =>
-          table.getColumn("user")?.setFilterValue(event.target.value)
+          table.getColumn("name")?.setFilterValue(event.target.value)
         }
-        className="flex-1 min-w-[150px]"
+        className="flex-1 min-w-[150px] focus-visible:ring-2 focus-visible:ring-red-500"
       />
 
       <Select

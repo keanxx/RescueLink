@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Swal from "sweetalert2";
 
 export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
   const isEdit = !!vehicle;
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
     license_plate: '',
@@ -20,25 +22,25 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
     current_location: '',
     current_latitude: '',
     current_longitude: '',
-    fuel_level: 100,
-    odometer_reading: 0,
+    fuel_level: '100',
+    odometer_reading: '0',
     equipment_list: ''
   });
 
   useEffect(() => {
     if (vehicle) {
       setFormData({
-        license_plate: vehicle.license_plate,
-        vehicle_type: vehicle.vehicle_type,
-        model: vehicle.model,
-        year: vehicle.year,
-        status: vehicle.status,
-        current_location: vehicle.current_location,
-        current_latitude: vehicle.current_latitude,
-        current_longitude: vehicle.current_longitude,
-        fuel_level: vehicle.fuel_level,
-        odometer_reading: vehicle.odometer_reading,
-        equipment_list: vehicle.equipment_list
+        license_plate: vehicle.license_plate || '',
+        vehicle_type: vehicle.vehicle_type || '',
+        model: vehicle.model || '',
+        year: vehicle.year || new Date().getFullYear(),
+        status: vehicle.status || 'available',
+        current_location: vehicle.current_location || '',
+        current_latitude: vehicle.current_latitude?.toString() || '',
+        current_longitude: vehicle.current_longitude?.toString() || '',
+        fuel_level: vehicle.fuel_level?.toString() || '100',
+        odometer_reading: vehicle.odometer_reading?.toString() || '0',
+        equipment_list: vehicle.equipment_list || ''
       });
     } else {
       setFormData({
@@ -50,25 +52,66 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
         current_location: '',
         current_latitude: '',
         current_longitude: '',
-        fuel_level: 100,
-        odometer_reading: 0,
+        fuel_level: '100',
+        odometer_reading: '0',
         equipment_list: ''
       });
     }
   }, [vehicle, open]);
 
+  useEffect(() => {
+    if (!open) setError(null);
+  }, [open]);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+
+  try {
+    // Clean up the data before sending
+    const cleanedData = {
+      license_plate: formData.license_plate.trim(),
+      vehicle_type: formData.vehicle_type,
+      model: formData.model.trim(),
+      year: parseInt(formData.year) || new Date().getFullYear(),
+      status: formData.status,
+      current_location: formData.current_location.trim(),
+      current_latitude: formData.current_latitude ? parseFloat(formData.current_latitude) : null,
+      current_longitude: formData.current_longitude ? parseFloat(formData.current_longitude) : null,
+      fuel_level: formData.fuel_level ? parseInt(formData.fuel_level) : 100,
+      odometer_reading: formData.odometer_reading ? parseInt(formData.odometer_reading) : 0,
+      equipment_list: formData.equipment_list.trim(),
+    };
+
+    console.log('Sending data:', cleanedData);
     
-    try {
-      await onSave(formData);
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    await onSave(cleanedData);
+    // If successful, parent component closes modal and shows success Swal
+    
+  } catch (err) {
+    console.error('Error saving vehicle:', err);
+    
+    // Show Swal error with high z-index to appear above modal
+  Swal.fire({
+  icon: 'error',
+  title: 'Save Failed',
+  text: err?.message || 
+        (typeof err === 'string' ? err : (err && err.toString())) || 
+        'Could not save vehicle',
+  confirmButtonColor: '#dc2626',
+  backdrop: false, // Disable Swal's own backdrop
+  customClass: {
+    container: 'swal-no-backdrop'
+  }
+});
+
+
+    // Modal stays open - user can fix the error and resubmit
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,7 +180,7 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
                 className="focus:ring-2 focus:ring-red-500 focus:outline-none"
                 placeholder="2023"
                 value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                 disabled={loading}
                 required
               />
@@ -183,27 +226,27 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
           {/* Coordinates Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className='space-y-2'>
-              <Label>Latitude</Label>
+              <Label>Latitude (Optional)</Label>
               <Input
                 type="number"
                 step="0.0001"
                 className="focus:ring-2 focus:ring-red-500 focus:outline-none"
-                placeholder="40.7128"
+                placeholder="13.6218"
                 value={formData.current_latitude}
-                onChange={(e) => setFormData({ ...formData, current_latitude: parseFloat(e.target.value) || '' })}
+                onChange={(e) => setFormData({ ...formData, current_latitude: e.target.value })}
                 disabled={loading}
               />
             </div>
 
             <div className='space-y-2'>
-              <Label>Longitude</Label>
+              <Label>Longitude (Optional)</Label>
               <Input
                 type="number"
                 step="0.0001"
                 className="focus:ring-2 focus:ring-red-500 focus:outline-none"
-                placeholder="-74.0060"
+                placeholder="123.1948"
                 value={formData.current_longitude}
-                onChange={(e) => setFormData({ ...formData, current_longitude: parseFloat(e.target.value) || '' })}
+                onChange={(e) => setFormData({ ...formData, current_longitude: e.target.value })}
                 disabled={loading}
               />
             </div>
@@ -220,7 +263,7 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
                 className="focus:ring-2 focus:ring-red-500 focus:outline-none"
                 placeholder="85"
                 value={formData.fuel_level}
-                onChange={(e) => setFormData({ ...formData, fuel_level: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, fuel_level: e.target.value })}
                 disabled={loading}
                 required
               />
@@ -234,7 +277,7 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
                 className="focus:ring-2 focus:ring-red-500 focus:outline-none"
                 placeholder="15000"
                 value={formData.odometer_reading}
-                onChange={(e) => setFormData({ ...formData, odometer_reading: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, odometer_reading: e.target.value })}
                 disabled={loading}
                 required
               />
@@ -255,6 +298,8 @@ export default function AddEdit({ open, onOpenChange, vehicle, onSave }) {
               Separate items with commas
             </p>
           </div>
+
+    
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4">

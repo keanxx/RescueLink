@@ -23,7 +23,6 @@ export default function VehicleTable() {
   const [deleteVehicle, setDeleteVehicle] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
   // Fetch vehicles on component mount
   useEffect(() => {
     fetchVehicles();
@@ -89,44 +88,32 @@ export default function VehicleTable() {
   };
 
   const handleSave = async (vehicleData) => {
-    try {
-      if (selectedVehicle) {
-        // Update existing vehicle
-        const updated = await vehiclesAPI.update(selectedVehicle.id, vehicleData);
-        setVehicles(vehicles.map(v => v.id === updated.id ? updated : v));
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Updated!',
-          text: 'Vehicle updated successfully',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } else {
-        // Create new vehicle
-        const newVehicle = await vehiclesAPI.create(vehicleData);
-        setVehicles([...vehicles, newVehicle]);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Added!',
-          text: 'Vehicle added successfully',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      }
-      
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Failed to save vehicle:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Save Failed',
-        text: error || 'Could not save vehicle',
-        confirmButtonColor: '#dc2626',
-      });
+  try {
+    if (selectedVehicle) {
+      const updated = await vehiclesAPI.update(selectedVehicle.id, vehicleData);
+      setVehicles(vehicles.map(v => v.id === updated.id ? updated : v));
+    } else {
+      const newVehicle = await vehiclesAPI.create(vehicleData);
+      setVehicles([...vehicles, newVehicle]);
     }
-  };
+    
+    // Close modal FIRST
+    setIsModalOpen(false);
+    
+    // Then show success message
+    Swal.fire({
+      icon: 'success',
+      title: selectedVehicle ? 'Updated!' : 'Added!',
+      text: `Vehicle ${selectedVehicle ? 'updated' : 'added'} successfully`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    
+  } catch (error) {
+    console.error('Failed to save vehicle:', error);
+  }
+};
+
 
   const columns = createColumns(handleEdit, handleDelete);
   

@@ -40,3 +40,20 @@
 .read-the-docs {
   color: #888;
 }
+.swal-on-modal {
+  z-index: 99999 !important;
+}
+.swal2-container.swal-on-modal {
+  z-index: 999999 !important;
+}
+[data-radix-dialog-overlay] {
+  z-index: 50 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 51 !important;
+}
+
+.swal-no-backdrop {
+  z-index: 999999 !important;
+}

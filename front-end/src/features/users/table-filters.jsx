@@ -31,9 +31,9 @@ export default function TableFilters({ table }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Roles</SelectItem>
-          <SelectItem value="Driver">Driver</SelectItem>
-          <SelectItem value="Rescuer">Rescuer</SelectItem>
-          <SelectItem value="Dispatcher">Dispatcher</SelectItem>
+          <SelectItem value="Responder">Responder</SelectItem>
+          <SelectItem value="Admin">Admin</SelectItem>
+          <SelectItem value="User">User</SelectItem>
         </SelectContent>
       </Select>
 

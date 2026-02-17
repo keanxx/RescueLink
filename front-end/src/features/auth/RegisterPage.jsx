@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { ShieldAlert, Mail, Lock, User, Loader2, Phone, Calendar } from 'lucide-react';
+
 
 export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
@@ -15,20 +16,26 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userPhone, setUserPhone] = useState('');
+  const [relativeNumber, setRelativeNumber] = useState('');
+  const [birthdate, setBirthdate] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+
   const { register } = useAuth();
   const navigate = useNavigate();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
+
 
     setLoading(true);
     try {
@@ -39,6 +46,8 @@ export default function RegisterPage() {
         ext_name: extName, 
         email, 
         user_phone_number: userPhone,
+        relative_number: relativeNumber,
+        birthdate: birthdate,
         password,
         password_confirmation: confirmPassword,
         username
@@ -50,6 +59,7 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex w-full items-center justify-center min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50">
@@ -66,6 +76,7 @@ export default function RegisterPage() {
             <p className="text-red-100 text-sm">Emergency Response System</p>
           </div>
 
+
           {/* Body */}
           <div className="p-8">
             <div className="text-center mb-6">
@@ -75,6 +86,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
+
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4" />
@@ -82,82 +94,87 @@ export default function RegisterPage() {
               </div>
             )}
 
+
             <form onSubmit={handleSubmit} className="space-y-5">
-                <div className='grid grid-cols-2 gap-5'>
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Juan"
-                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
-                    required
-                    disabled={loading}
-                  />
+              <div className='grid grid-cols-2 gap-5'>
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    First Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Juan"
+                      className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+
+                {/* Last Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Dela Cruz"
+                      className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+
+                {/* Middle Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Middle Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={middleName}
+                      onChange={(e) => setMiddleName(e.target.value)}
+                      placeholder="Santos"
+                      className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+
+                {/* Extension Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Extension Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={extName}
+                      onChange={(e) => setExtName(e.target.value)}
+                      placeholder="Jr."
+                      className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Last Name */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Dela Cruz"
-                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
-                    required
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              {/* Middle Name */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Middle Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    value={middleName}
-                    onChange={(e) => setMiddleName(e.target.value)}
-                    placeholder="Santos"
-                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              {/* Extension Name */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Extension Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    value={extName}
-                    onChange={(e) => setExtName(e.target.value)}
-                    placeholder="Jr."
-                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-              </div>
 
               {/* Email */}
               <div>
@@ -184,7 +201,7 @@ export default function RegisterPage() {
                   Phone Number
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     type="tel"
                     value={userPhone}
@@ -196,12 +213,51 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-               <div>
+
+              {/* Relative Number */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Relative Contact Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    type="tel"
+                    value={relativeNumber}
+                    onChange={(e) => setRelativeNumber(e.target.value)}
+                    placeholder="09123456789"
+                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Birthdate */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Birthdate
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    type="date"
+                    value={birthdate}
+                    onChange={(e) => setBirthdate(e.target.value)}
+                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Username */}
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Username
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     type="text"
                     value={username}
@@ -234,6 +290,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+
               {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -253,6 +310,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+
               <Button
                 type="submit"
                 className="w-full h-12 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold shadow-lg shadow-red-500/30 transition-all"
@@ -269,6 +327,7 @@ export default function RegisterPage() {
               </Button>
             </form>
 
+
             <p className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{' '}
               <a
@@ -280,6 +339,7 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
+
 
         <footer className="text-center mt-6 text-sm text-gray-600">
           <p>© 2026 RescueLink. All rights reserved.</p>

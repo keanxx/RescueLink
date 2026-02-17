@@ -1,110 +1,129 @@
-import { useState } from 'react';
-import AlertSidebar from '@/features/dashboard/live-map/alert-sidebar';
-import MapView from '@/features/dashboard/live-map/map-view';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; 
+import { alertsAPI } from '@/api/alerts';
 import AlertDetailsModal from '@/features/dashboard/live-alerts/alert-details-modal';
+import AccidentMap from '@/features/dashboard/live-map/map-view';
+import AlertSidebar from '@/features/dashboard/live-alerts/alert-sidebar';
 
-// Sample alerts in Camarines Norte
-const alerts = [
-  {
-    id: 'A-1234',
-    timestamp: '2 min ago',
-    severity: 'Critical',
-    location: '14.1154° N, 122.9554° E', // Daet
-    type: 'Auto Crash Detection',
-    user: 'Juan Dela Cruz',
-    device: 'Samsung Galaxy S21',
-    status: 'Pending',
-  },
-  {
-    id: 'A-1233',
-    timestamp: '8 min ago',
-    severity: 'High',
-    location: '14.0608° N, 122.8456° E', // Vinzons
-    type: 'Manual SOS',
-    user: 'Maria Santos',
-    device: 'iPhone 13',
-    status: 'Verified',
-  },
-  {
-    id: 'A-1232',
-    timestamp: '15 min ago',
-    severity: 'Medium',
-    location: '14.2892° N, 122.9142° E', // Labo
-    type: 'Auto Crash Detection',
-    user: 'Pedro Garcia',
-    device: 'OnePlus 9',
-    status: 'Pending',
-  },
-  {
-    id: 'A-1231',
-    timestamp: '22 min ago',
-    severity: 'Critical',
-    location: '14.1842° N, 122.7543° E', // Mercedes
-    type: 'Manual SOS',
-    user: 'Ana Reyes',
-    device: 'Xiaomi Redmi Note 10',
-    status: 'Resolved',
-  },
-  {
-    id: 'A-1230',
-    timestamp: '35 min ago',
-    severity: 'High',
-    location: '14.3712° N, 122.8934° E', // Jose Panganiban
-    type: 'Auto Crash Detection',
-    user: 'Carlos Ramos',
-    device: 'Samsung Galaxy A52',
-    status: 'Verified',
-  },
-];
-
-export default function LiveMap() {
+const LiveMap = () => {
+  const location = useLocation(); // ✅ Add this
+  const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [detailsAlert, setDetailsAlert] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch alerts when component mounts
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  // ✅ Check if alert was passed from navigation
+  useEffect(() => {
+    if (location.state?.selectedAlert) {
+      const alert = location.state.selectedAlert;
+      setSelectedAlert(alert);
+      
+      // Optional: Open modal automatically
+      setDetailsAlert(alert);
+      setDetailsModalOpen(true);
+    }
+  }, [location.state]);
+
+  const fetchAlerts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await alertsAPI.getAll();
+      console.log('Fetched alerts:', data);
+      setAlerts(data);
+    } catch (err) {
+      console.error('Error fetching alerts:', err);
+      setError(err.message || 'Failed to load alerts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAlertSelect = (alert) => {
     setSelectedAlert(alert);
   };
 
   const handleViewDetails = (alert) => {
-    setSelectedAlert(alert);
-    setShowModal(true);
+    setDetailsAlert(alert);
+    setDetailsModalOpen(true);
   };
 
+  const handleMarkerClick = (alert) => {
+    setSelectedAlert(alert);
+    setDetailsAlert(alert);
+    setDetailsModalOpen(true);
+  };
+
+  const handleUpdateAlert = (updatedAlert) => {
+    setAlerts(alerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
+    setDetailsAlert(updatedAlert);
+    
+    if (selectedAlert?.id === updatedAlert.id) {
+      setSelectedAlert(updatedAlert);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading alerts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={fetchAlerts}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-[calc(100vh-80px)] flex gap-4 p-6">
-      {/* Sidebar */}
-      <AlertSidebar
-        alerts={alerts}
-        selectedAlert={selectedAlert}
-        onAlertSelect={handleAlertSelect}
-        onViewDetails={handleViewDetails}
-      />
-
-      {/* Map */}
-      <MapView
-        alerts={alerts}
-        selectedAlert={selectedAlert}
-        onAlertSelect={handleAlertSelect}
-      />
-
-      {/* Details Modal */}
-      {showModal && selectedAlert && (
-        <AlertDetailsModal
-          alert={selectedAlert}
-          onClose={() => setShowModal(false)}
-          onVerify={() => {
-            console.log('Verify:', selectedAlert.id);
-            setShowModal(false);
-          }}
-          onResolve={() => {
-            console.log('Resolve:', selectedAlert.id);
-            setShowModal(false);
-          }}
-          onAssignResponder={() => {
-            console.log('Assign responder:', selectedAlert.id);
-          }}
+    <>
+      <div className="h-screen w-full flex">
+        <AlertSidebar
+          alerts={alerts}
+          selectedAlert={selectedAlert}
+          onAlertSelect={handleAlertSelect}
+          onViewDetails={handleViewDetails}
         />
-      )}
-    </div>
+        
+        <div className="flex-1">
+          <AccidentMap 
+            alerts={alerts}
+            selectedAlert={selectedAlert}
+            onMarkerClick={handleMarkerClick}
+          />
+        </div>
+      </div>
+
+      <AlertDetailsModal
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        alert={detailsAlert}
+        onUpdateAlert={handleUpdateAlert}
+      />
+    </>
   );
-}
+};
+
+export default LiveMap;

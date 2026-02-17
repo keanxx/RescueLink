@@ -3,11 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2 } from "lucide-react";
 
 export const createColumns = (onEdit, onDelete) => [
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="font-medium">#{row.getValue("id")}</div>,
-  },
+ 
   {
     accessorKey: "first_name",
     header: "Name",

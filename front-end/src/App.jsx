@@ -5,7 +5,7 @@ import { AuthProvider } from './features/auth/AuthContext';
 function App() {
   return (
   <AuthProvider>
- <RouterProvider router={router} />;
+ <RouterProvider router={router} />
 
   </AuthProvider>
   )

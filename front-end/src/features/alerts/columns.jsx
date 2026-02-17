@@ -6,28 +6,35 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, CheckCircle, Pin, MoreHorizontal } from "lucide-react";
+import { Eye, CheckCircle, Pin, MoreHorizontal, Trash2 } from "lucide-react";
 
-export const columns = [
-  {
-    accessorKey: "id",
-    header: "ALERT ID",
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-sm">{row.original.id}</div>
-        <div className="text-xs text-muted-foreground">
-          {row.original.timestamp}
-        </div>
-      </div>
-    ),
-  },
+export const createColumns = (onView, onStatusChange, onAssign, onDelete, onViewOnMap) => [
   {
     accessorKey: "user",
-    header: "USER / DEVICE",
+    header: "USER",
+    cell: ({ row }) => {
+      const user = row.original.user;
+      return (
+        <div>
+          <div className="font-medium text-sm">
+            {user ? `${user.first_name} ${user.last_name}` : 'Unknown User'}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {user?.email || 'N/A'}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "title",
+    header: "TITLE",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium text-sm">{row.original.user}</div>
-        
+        <div className="text-sm font-medium">{row.original.title}</div>
+        <div className="text-xs text-muted-foreground line-clamp-1">
+          {row.original.description || 'No description'}
+        </div>
       </div>
     ),
   },
@@ -35,9 +42,14 @@ export const columns = [
     accessorKey: "location",
     header: "LOCATION",
     cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {row.original.location.lat}, {row.original.location.lng}
-      </span>
+      <div>
+        <div className="text-sm font-medium">{row.original.location}</div>
+        {row.original.latitude && row.original.longitude && (
+          <div className="text-xs text-muted-foreground">
+            {row.original.latitude.toFixed(4)}, {row.original.longitude.toFixed(4)}
+          </div>
+        )}
+      </div>
     ),
   },
   {
@@ -46,23 +58,29 @@ export const columns = [
     cell: ({ row }) => {
       const status = row.original.status;
       const variantMap = {
-        Pending: "bg-orange-100 text-orange-700",
-        Verified: "bg-green-100 text-green-700",
-        Resolved: "bg-blue-100 text-blue-700",
+        pending: "bg-orange-100 text-orange-700",
+        responding: "bg-blue-100 text-blue-700",
+        resolved: "bg-green-100 text-green-700",
+        cancelled: "bg-gray-100 text-gray-700",
       };
       return (
-        <Badge className={`font-medium ${variantMap[status]}`}>
-          {status}
+        <Badge className={`font-medium ${variantMap[status] || 'bg-gray-100 text-gray-700'}`}>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "alertType",
-    header: "ALERT TYPE",
-    cell: ({ row }) => (
-      <span className="text-sm">{row.original.alertType}</span>
-    ),
+    accessorKey: "alert_type",
+    header: "TYPE",
+    cell: ({ row }) => {
+      const type = row.original.alert_type;
+      return (
+        <span className="text-sm capitalize">
+          {type.replace('_', ' ')}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "severity",
@@ -70,12 +88,13 @@ export const columns = [
     cell: ({ row }) => {
       const severity = row.original.severity;
       const variantMap = {
-        Critical: "destructive",
-        High: "default",
-        Medium: "secondary",
+        critical: "bg-red-100 text-red-700",
+        high: "bg-orange-100 text-orange-700",
+        medium: "bg-yellow-100 text-yellow-700",
+        low: "bg-blue-100 text-blue-700",
       };
       return (
-        <Badge variant={variantMap[severity]} className="font-medium">
+        <Badge className={`font-medium capitalize ${variantMap[severity]}`}>
           {severity}
         </Badge>
       );
@@ -89,19 +108,39 @@ export const columns = [
 
       return (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            title="View Details"
+            onClick={() => onView(alert)}
+          >
             <Eye className="h-4 w-4" />
           </Button>
 
-          {alert.status === "Pending" && (
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+          {alert.status === "pending" && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8" 
+              title="Mark as Responding"
+              onClick={() => onStatusChange(alert, 'responding')}
+            >
               <CheckCircle className="h-4 w-4" />
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Pin className="h-4 w-4" />
-          </Button>
+          {alert.latitude && alert.longitude && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" 
+              title="View on Map"
+              onClick={() => onViewOnMap(alert)} // ✅ Calls navigate function
+            >
+              <Pin className="h-4 w-4" />
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -110,9 +149,31 @@ export const columns = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Mark as Resolved</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem onClick={() => onView(alert)}>
+                View Details
+              </DropdownMenuItem>
+              {alert.latitude && alert.longitude && (
+                <DropdownMenuItem onClick={() => onViewOnMap(alert)}>
+                  View on Map
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => onAssign(alert, null, null)}>
+                Assign Responder
+              </DropdownMenuItem>
+              {alert.status !== 'resolved' && (
+                <DropdownMenuItem onClick={() => onStatusChange(alert, 'resolved')}>
+                  Mark as Resolved
+                </DropdownMenuItem>
+              )}
+              {alert.status !== 'cancelled' && (
+                <DropdownMenuItem onClick={() => onStatusChange(alert, 'cancelled')}>
+                  Cancel Alert
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => onDelete(alert)}
+              >
                 Delete Alert
               </DropdownMenuItem>
             </DropdownMenuContent>

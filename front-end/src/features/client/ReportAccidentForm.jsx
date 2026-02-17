@@ -7,9 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, MapPin, Loader2, Car, Users, Flame } from "lucide-react";
 import { alertsAPI } from "@/api/alerts";
+import { geolocationAPI } from '@/api/geolocation';
 import Swal from "sweetalert2";
 
 export default function ReportAccidentForm() {
+  // STATE MANAGEMENT
+  
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   
@@ -27,149 +30,258 @@ export default function ReportAccidentForm() {
     image_url: '',
   });
 
-  // Get current location
- // Get current location and convert to address
-const getCurrentLocation = () => {
-  setGettingLocation(true);
+  // GET GPS LOCATION AND REVERSE GEOCODE
   
-  if (!navigator.geolocation) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Geolocation Not Supported',
-      text: 'Your browser does not support geolocation',
-      confirmButtonColor: '#dc2626',
-    });
-    setGettingLocation(false);
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      
-      try {
-        // Reverse geocode to get address
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          {
-            headers: {
-              'Accept-Language': 'en-US,en;q=0.9',
-            }
-          }
-        );
-        
-        const data = await response.json();
-        
-        // Build readable address
-        let address = '';
-        
-        if (data.address) {
-          const parts = [];
-          
-          // Road/Street
-          if (data.address.road) parts.push(data.address.road);
-          
-          // Suburb/Neighborhood
-          if (data.address.suburb) parts.push(data.address.suburb);
-          else if (data.address.neighbourhood) parts.push(data.address.neighbourhood);
-          
-          // City
-          if (data.address.city) parts.push(data.address.city);
-          else if (data.address.town) parts.push(data.address.town);
-          else if (data.address.municipality) parts.push(data.address.municipality);
-          
-          // State/Province (for Philippines)
-          if (data.address.state) parts.push(data.address.state);
-          
-          address = parts.join(', ');
-        }
-        
-        // Fallback to display_name if address parts not available
-        if (!address && data.display_name) {
-          address = data.display_name;
-        }
-        
-        // If still no address, use coordinates
-        if (!address) {
-          address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        }
-        
-        setFormData({
-          ...formData,
-          latitude: lat.toString(),
-          longitude: lng.toString(),
-          location: address,
-        });
-
-        setGettingLocation(false);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Location Found!',
-          html: `
-            <p class="font-semibold mb-2">${address}</p>
-            <p class="text-sm text-gray-600">Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
-          `,
-          timer: 3000,
-          showConfirmButton: false,
-        });
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        
-        // Fallback to coordinates if geocoding fails
-        const fallbackAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        
-        setFormData({
-          ...formData,
-          latitude: lat.toString(),
-          longitude: lng.toString(),
-          location: fallbackAddress,
-        });
-        
-        setGettingLocation(false);
-        
-        Swal.fire({
-          icon: 'warning',
-          title: 'Location Found (Coordinates Only)',
-          text: 'Could not get street address, but coordinates are saved.',
-          timer: 2000,
-        });
-      }
-    },
-    (error) => {
-      console.error('Geolocation error:', error);
+  /**
+   * Get user's GPS location and convert to address using backend
+   */
+  const getCurrentLocation = () => {
+    console.log('🔍 Getting GPS location...');
+    setGettingLocation(true);
+    
+    // Check if browser supports geolocation
+    if (!navigator.geolocation) {
       Swal.fire({
         icon: 'error',
-        title: 'Location Error',
-        text: 'Could not get your location. Please enter manually.',
+        title: 'Not Supported',
+        text: 'Your device does not support GPS location',
         confirmButtonColor: '#dc2626',
       });
       setGettingLocation(false);
+      return;
     }
-  );
-};
 
+    // Show loading message
+    Swal.fire({
+      title: 'Getting Your Location...',
+      html: `
+        <div class="space-y-3">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="text-sm text-gray-600">Please wait while we locate you...</p>
+          <p class="text-xs text-gray-500">This may take up to 30 seconds</p>
+        </div>
+      `,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
 
+    // GPS options
+    const options = {
+      enableHighAccuracy: true,   // Use GPS for best accuracy
+      timeout: 30000,             // Wait up to 30 seconds
+      maximumAge: 0               // Don't use cached position
+    };
+
+    // Request GPS position
+    navigator.geolocation.getCurrentPosition(
+      // SUCCESS - GPS position obtained
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+        
+        console.log('✅ GPS position obtained:', { lat, lng, accuracy });
+        
+        try {
+          // Show temporary success
+          Swal.fire({
+            icon: 'success',
+            title: 'Location Found!',
+            text: 'Getting address...',
+            timer: 1000,
+            showConfirmButton: false,
+          });
+          
+          console.log('🌍 Converting coordinates to address via backend...');
+          
+          // Call backend to convert coordinates to address
+          const result = await geolocationAPI.reverseGeocode(lat, lng);
+          
+          console.log('✅ Address result:', result);
+          
+          if (result.success) {
+            // Update form with location data
+            setFormData({
+              ...formData,
+              latitude: lat.toString(),
+              longitude: lng.toString(),
+              location: result.address,
+            });
+            
+            setGettingLocation(false);
+            
+            // Show success with address details
+            Swal.fire({
+              icon: 'success',
+              title: 'Location Found!',
+              html: `
+                <div class="text-left space-y-2">
+                  <p class="font-semibold text-center mb-3">${result.address}</p>
+                  <div class="bg-gray-50 p-3 rounded text-sm">
+                    <p><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                    <p><strong>Accuracy:</strong> ±${Math.round(accuracy)} meters</p>
+                    ${result.details?.road ? `<p><strong>Road:</strong> ${result.details.road}</p>` : ''}
+                    ${result.details?.city ? `<p><strong>City:</strong> ${result.details.city}</p>` : ''}
+                  </div>
+                </div>
+              `,
+              timer: 4000,
+              showConfirmButton: false,
+            });
+          }
+          
+        } catch (error) {
+          console.error('❌ Reverse geocode error:', error);
+          
+          // Fallback: Use coordinates as address
+          const fallbackAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          
+          setFormData({
+            ...formData,
+            latitude: lat.toString(),
+            longitude: lng.toString(),
+            location: fallbackAddress,
+          });
+          
+          setGettingLocation(false);
+          
+          Swal.fire({
+            icon: 'warning',
+            title: 'Coordinates Saved',
+            text: 'Could not get street address, but your GPS location is saved.',
+            timer: 2500,
+            showConfirmButton: false,
+          });
+        }
+      },
+      
+      // ERROR - GPS failed
+      (error) => {
+        console.error('❌ GPS error:', error);
+        setGettingLocation(false);
+        
+        let errorTitle = 'Location Error';
+        let errorMessage = '';
+        let instructions = '';
+        
+        // Provide specific error messages based on error code
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorTitle = 'Permission Denied';
+            errorMessage = 'You denied location access.';
+            instructions = `
+              <div class="text-left text-sm space-y-2 mt-3 bg-yellow-50 p-3 rounded">
+                <p class="font-semibold">How to enable location:</p>
+                <ol class="list-decimal ml-4 space-y-1">
+                  <li>Click the lock icon 🔒 in your browser address bar</li>
+                  <li>Find "Location" permission</li>
+                  <li>Change to "Allow"</li>
+                  <li>Reload the page and try again</li>
+                </ol>
+                <p class="mt-2 text-gray-600">Or enter your location manually below.</p>
+              </div>
+            `;
+            break;
+            
+          case error.POSITION_UNAVAILABLE:
+            errorTitle = 'Location Unavailable';
+            errorMessage = 'Cannot determine your position.';
+            instructions = `
+              <div class="text-left text-sm space-y-2 mt-3 bg-blue-50 p-3 rounded">
+                <p class="font-semibold">Try this:</p>
+                <ul class="list-disc ml-4 space-y-1">
+                  <li>Turn on Location Services in your device settings</li>
+                  <li>Make sure GPS is enabled</li>
+                  <li>Move to an area with better signal (near window or outside)</li>
+                  <li>If indoors, try going outside</li>
+                </ul>
+              </div>
+            `;
+            break;
+            
+          case error.TIMEOUT:
+            errorTitle = 'Request Timeout';
+            errorMessage = 'Location request took too long.';
+            instructions = `
+              <div class="text-left text-sm space-y-2 mt-3 bg-orange-50 p-3 rounded">
+                <p class="font-semibold">Try this:</p>
+                <ul class="list-disc ml-4 space-y-1">
+                  <li>Check your GPS signal strength</li>
+                  <li>Move to an open area</li>
+                  <li>Wait a few seconds and try again</li>
+                  <li>Or enter your location manually below</li>
+                </ul>
+              </div>
+            `;
+            break;
+            
+          default:
+            errorMessage = 'An unexpected error occurred.';
+            instructions = '<p class="text-sm mt-2">Please enter your location manually.</p>';
+        }
+        
+        // Show error with retry option
+        Swal.fire({
+          icon: 'error',
+          title: errorTitle,
+          html: `
+            <p class="mb-2">${errorMessage}</p>
+            ${instructions}
+            <div class="bg-gray-100 p-2 rounded text-xs mt-3">
+              Error Code: ${error.code}
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          confirmButtonText: '🔄 Try Again',
+          cancelButtonText: 'Enter Manually',
+          width: 600,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Retry after 1 second
+            setTimeout(() => getCurrentLocation(), 1000);
+          }
+        });
+      },
+      
+      options
+    );
+  };
+
+  // FORM SUBMIT HANDLER
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Validate
+      console.log('📤 Submitting form data:', formData);
+      
+      // Validate required fields
       if (!formData.accident_type || !formData.severity || !formData.location) {
         Swal.fire({
           icon: 'warning',
-          title: 'Missing Fields',
-          text: 'Please fill in all required fields',
+          title: 'Missing Required Fields',
+          html: `
+            <p class="mb-2">Please fill in the following:</p>
+            <ul class="text-left text-sm">
+              ${!formData.accident_type ? '<li>• Type of Accident</li>' : ''}
+              ${!formData.severity ? '<li>• Severity Level</li>' : ''}
+              ${!formData.location ? '<li>• Location</li>' : ''}
+            </ul>
+          `,
           confirmButtonColor: '#dc2626',
         });
         setLoading(false);
         return;
       }
 
-      // Build title if not provided
-      const title = formData.title || `${formData.accident_type} - ${formData.location.substring(0, 50)}`;
+      // Build title
+      const title = formData.title || 
+        `${formData.accident_type} - ${formData.location.substring(0, 50)}`;
 
       // Build description
       const descriptionParts = [];
@@ -177,12 +289,11 @@ const getCurrentLocation = () => {
       if (formData.vehicles_involved) descriptionParts.push(`Vehicles involved: ${formData.vehicles_involved}`);
       if (formData.injuries) descriptionParts.push(`Injuries: ${formData.injuries}`);
       if (formData.hazards) descriptionParts.push(`Hazards: ${formData.hazards}`);
-      
       const description = descriptionParts.join('\n');
 
-      // Clean data
+      // Prepare data for API
       const cleanedData = {
-        alert_type: 'accident', // Always accident for this system
+        alert_type: 'accident',
         severity: formData.severity,
         title: title.trim(),
         description: description || null,
@@ -192,29 +303,42 @@ const getCurrentLocation = () => {
         image_url: formData.image_url || null,
       };
 
-      console.log('Submitting report:', cleanedData);
+      console.log('📤 Sending to API:', cleanedData);
 
-      // Submit
+      // Submit to API
       const result = await alertsAPI.create(cleanedData);
 
-      console.log('Report submitted:', result);
+      console.log('✅ Report submitted successfully:', result);
 
-      // Success
+      // Show success message
       Swal.fire({
         icon: 'success',
         title: 'Accident Reported!',
         html: `
-          <p class="text-lg font-semibold mb-2">Emergency services have been notified</p>
-          <div class="bg-gray-50 p-4 rounded-lg mt-4 text-left">
-            <p class="text-sm text-gray-600"><strong>Report ID:</strong> #${result.id}</p>
-            <p class="text-sm text-gray-600"><strong>Status:</strong> Pending Response</p>
-            <p class="text-sm text-gray-600"><strong>Location:</strong> ${formData.location}</p>
+          <div class="text-center">
+            <p class="text-lg font-semibold mb-3">🚨 Emergency services have been notified</p>
+            
+            <div class="bg-gray-50 p-4 rounded-lg mt-4 text-left space-y-2">
+              <p class="text-sm"><strong>Report ID:</strong> #${result.id}</p>
+              <p class="text-sm"><strong>Status:</strong> <span class="text-yellow-600 font-semibold">Pending Response</span></p>
+              <p class="text-sm"><strong>Severity:</strong> <span class="uppercase">${formData.severity}</span></p>
+              <p class="text-sm"><strong>Location:</strong> ${formData.location}</p>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+              <p class="text-sm text-blue-900">
+                📍 An ambulance and rescue team will be dispatched to your location shortly.
+              </p>
+            </div>
+            
+            <p class="text-base font-semibold text-red-600 mt-4">
+              🚑 Help is on the way!
+            </p>
           </div>
-          <p class="text-sm text-gray-600 mt-4">An ambulance and rescue team will be dispatched shortly.</p>
-          <p class="text-sm font-semibold text-red-600 mt-2">Help is on the way!</p>
         `,
         confirmButtonColor: '#dc2626',
         confirmButtonText: 'OK',
+        width: 600,
       });
 
       // Reset form
@@ -231,12 +355,20 @@ const getCurrentLocation = () => {
         hazards: '',
         image_url: '',
       });
+      
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error('❌ Submit error:', error);
+      console.error('Error details:', error.response?.data);
+      
       Swal.fire({
         icon: 'error',
         title: 'Submission Failed',
-        text: error?.response?.data?.message || error?.message || 'Could not submit report',
+        html: `
+          <p class="mb-2">Could not submit your report. Please try again.</p>
+          <div class="bg-red-50 p-3 rounded text-sm text-left mt-3">
+            <p><strong>Error:</strong> ${error?.response?.data?.message || error?.message || 'Unknown error'}</p>
+          </div>
+        `,
         confirmButtonColor: '#dc2626',
       });
     } finally {
@@ -244,6 +376,8 @@ const getCurrentLocation = () => {
     }
   };
 
+  // RENDER FORM
+  
   return (
     <div className="max-w-3xl mx-auto p-6">
       <Card>
@@ -263,6 +397,7 @@ const getCurrentLocation = () => {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            
             {/* Accident Type */}
             <div className="space-y-2">
               <Label className="text-base">Type of Accident *</Label>
@@ -309,7 +444,7 @@ const getCurrentLocation = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🟢</span>
                         <div>
-                          <div className="font-medium">Minor</div>
+                          <div className="font-medium">Low</div>
                           <div className="text-xs text-gray-500">Property damage only, no injuries</div>
                         </div>
                       </div>
@@ -318,7 +453,7 @@ const getCurrentLocation = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🟡</span>
                         <div>
-                          <div className="font-medium">Moderate</div>
+                          <div className="font-medium">Medium</div>
                           <div className="text-xs text-gray-500">Minor injuries, medical attention needed</div>
                         </div>
                       </div>
@@ -327,7 +462,7 @@ const getCurrentLocation = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🟠</span>
                         <div>
-                          <div className="font-medium">Serious</div>
+                          <div className="font-medium">High</div>
                           <div className="text-xs text-gray-500">Multiple injuries, immediate response required</div>
                         </div>
                       </div>
@@ -422,6 +557,8 @@ const getCurrentLocation = () => {
                   <MapPin className="h-5 w-5 text-blue-600" />
                   Accident Location *
                 </Label>
+                
+                {/* Single GPS button */}
                 <Button
                   type="button"
                   variant="outline"
@@ -444,6 +581,7 @@ const getCurrentLocation = () => {
                 </Button>
               </div>
 
+              {/* Address input */}
               <div className="space-y-2">
                 <Input
                   className="focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
@@ -455,6 +593,7 @@ const getCurrentLocation = () => {
                 />
               </div>
 
+              {/* Coordinates */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   type="number"
@@ -514,6 +653,7 @@ const getCurrentLocation = () => {
               </Button>
             </div>
 
+            {/* Emergency Warning */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-900 text-center">
                 <strong>⚠️ Emergency:</strong> If this is a life-threatening situation, please call <strong className="text-lg">911</strong> immediately while submitting this report.

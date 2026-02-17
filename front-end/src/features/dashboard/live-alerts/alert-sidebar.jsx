@@ -6,12 +6,12 @@ import { Eye, Clock, AlertCircle } from 'lucide-react';
 
 export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onViewDetails }) {
   return (
-    <Card className="w-80 ">
+    <Card className="w-80">
       <CardContent className="p-4">
         <div className="mb-4">
           <h2 className="font-bold text-lg">Active Alerts</h2>
           <p className="text-xs text-muted-foreground">
-            Camarines Norte ({alerts.length})
+            Total Alerts ({alerts.length})
           </p>
         </div>
 
@@ -27,31 +27,46 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                     : 'hover:bg-muted border-transparent'
                 }`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-sm font-semibold">{alert.id}</span>
+                <div className="flex justify-end gap-2 mb-2">
+                  <Badge  className={
+                      alert.status === 'resolved'
+                        ? 'bg-green-500 text-white '
+                        : alert.status === 'pending'
+                        ? 'bg-orange-500 text-white '
+                        : alert.status === 'verified'
+                        ? 'bg-blue-500 text-white '
+                        : 'bg-gray-500 text-white '
+                    }
+                  >{alert.status}</Badge>
                   <Badge
                     className={
-                      alert.severity === 'Critical'
+                      alert.severity === 'critical'
                         ? 'bg-red-500 text-white'
-                        : alert.severity === 'High'
+                        : alert.severity === 'high'
                         ? 'bg-orange-500 text-white'
-                        : 'bg-yellow-500 text-white'
+                        : alert.severity === 'medium'
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-blue-500 text-white'
                     }
                   >
                     {alert.severity}
                   </Badge>
                 </div>
 
-                <p className="text-sm font-medium mb-1">{alert.user}</p>
+                <p className="text-sm font-medium mb-1">
+                  {alert.user 
+                    ? `${alert.user.first_name} ${alert.user.last_name}` 
+                    : 'Unknown User'}
+                </p>
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock size={12} />
-                    {alert.timestamp}
+                    {new Date(alert.reported_at).toLocaleString()}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <AlertCircle size={12} />
-                    {alert.type}
+                    {alert.alert_type.replace('_', ' ')}
                   </div>
                 </div>
 

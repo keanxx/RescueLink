@@ -237,9 +237,7 @@ export default function AddEdit({ open, onOpenChange, user, onSave }) {
                 <SelectGroup>
                   <SelectLabel>Roles</SelectLabel>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="driver">Driver</SelectItem>
-                  <SelectItem value="rescuer">Rescuer</SelectItem>
-                  <SelectItem value="dispatcher">Dispatcher</SelectItem>
+                  <SelectItem value="responder">Responder</SelectItem>
                   <SelectItem value="user">User</SelectItem>
                 </SelectGroup>
               </SelectContent>

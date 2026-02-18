@@ -6,15 +6,55 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useNavigate } from 'react-router-dom';
 import LiveAlertsTable from '@/features/dashboard/live-alerts/live-alerts-table';
 import MapView from '@/features/dashboard/live-map/map-view';
-import AccidentMap from '@/features/dashboard/live-map/map-view';
 
 // Sample alerts data (you can move this to a shared file later)
 const alerts = [];
 
 const Dashboard = () => {
- <div>
-  Empty for now, testing geoglocation atm, cannot test geo tagging in localhost, will test in production. Will work on the dashboard later.
- </div>
+  const navigate = useNavigate();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600 mt-1">Real-time emergency response monitoring</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Active Alerts"
+          value="12"
+          icon={AlertTriangle}
+          color="red"
+          trend="+3 from last hour"
+        />
+        <StatCard
+          title="Responders Online"
+          value="48"
+          icon={Users}
+          color="blue"
+          trend="92% availability"
+        />
+        <StatCard
+          title="Accidents Today"
+          value="27"
+          icon={Car}
+          color="orange"
+          trend="-8% from yesterday"
+        />
+        <StatCard
+          title="Avg Response Time"
+          value="4.2m"
+          icon={Clock}
+          color="green"
+          trend="12s faster"
+        />
+      </div>
+
+
+    </div>
+  );
 };
 
 export default Dashboard;

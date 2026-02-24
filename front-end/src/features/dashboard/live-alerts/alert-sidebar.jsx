@@ -64,7 +64,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                     <Clock size={12} />
                     {new Date(alert.reported_at).toLocaleString()}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground capitalize">
                     <AlertCircle size={12} />
                     {alert.alert_type.replace('_', ' ')}
                   </div>

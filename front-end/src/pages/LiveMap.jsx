@@ -99,7 +99,7 @@ const LiveMap = () => {
 
   return (
     <>
-      <div className="h-screen w-full flex">
+      <div className="h-screen w-full flex gap-4">
         <AlertSidebar
           alerts={alerts}
           selectedAlert={selectedAlert}
@@ -107,7 +107,7 @@ const LiveMap = () => {
           onViewDetails={handleViewDetails}
         />
         
-        <div className="flex-1">
+        <div className="flex-1 rounded-lg overflow-hidden">
           <AccidentMap 
             alerts={alerts}
             selectedAlert={selectedAlert}

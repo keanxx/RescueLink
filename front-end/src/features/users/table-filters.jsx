@@ -13,9 +13,9 @@ export default function TableFilters({ table }) {
       <Input
 
         placeholder="Search users..."
-        value={table.getColumn("name")?.getFilterValue() ?? ""}
+        value={table.getColumn("first_name")?.getFilterValue() ?? ""}
         onChange={(event) =>
-          table.getColumn("name")?.setFilterValue(event.target.value)
+          table.getColumn("first_name")?.setFilterValue(event.target.value)
         }
         className="flex-1 min-w-[150px] focus-visible:ring-2 focus-visible:ring-red-500"
       />

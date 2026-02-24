@@ -157,9 +157,7 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
                   View on Map
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onAssign(alert, null, null)}>
-                Assign Responder
-              </DropdownMenuItem>
+             
               {alert.status !== 'resolved' && (
                 <DropdownMenuItem onClick={() => onStatusChange(alert, 'resolved')}>
                   Mark as Resolved

@@ -27,7 +27,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                     : 'hover:bg-muted border-transparent'
                 }`}
               >
-                <div className="flex justify-end gap-2 mb-2">
+                <div className="flex justify-end gap-2 mb-2 capitalize">
                   <Badge  className={
                       alert.status === 'resolved'
                         ? 'bg-green-500 text-white '

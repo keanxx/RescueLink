@@ -22,15 +22,15 @@ import { usersAPI } from '@/api/users';
 import { vehiclesAPI } from '@/api/vehicles';
 
 export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateAlert }) {
-    if (!alert) return null;
+  if (!alert) return null;
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [responders, setResponders] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [selectedResponderId, setSelectedResponderId] = useState(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [loading, setLoading] = useState(false);
-
-
+  const [message, setMessage] = useState(null); // FIX 4: Replace alert() with state message
 
   // Fetch responders and vehicles when modal opens
   useEffect(() => {
@@ -44,24 +44,27 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
     if (alert) {
       setSelectedResponderId(alert.assigned_responder_id || null);
       setSelectedVehicleId(alert.assigned_vehicle_id || null);
+      setMessage(null); // Clear message when alert changes
     }
   }, [alert]);
 
   const fetchRespondersAndVehicles = async () => {
     try {
       setLoading(true);
-      
-      // Fetch both in parallel using your existing APIs
+
       const [respondersData, vehiclesData] = await Promise.all([
         usersAPI.getAll({ role: 'responder' }),
-        vehiclesAPI.getAll({ status: 'available' })
+        vehiclesAPI.getAll(), // FIX 1: Fetch all vehicles, filter below
       ]);
 
-      console.log('Responders:', respondersData);
-      console.log('Vehicles:', vehiclesData);
-
       setResponders(respondersData);
-      setVehicles(vehiclesData);
+
+      // FIX 1: Only show available vehicles OR the currently assigned one
+      setVehicles(
+        vehiclesData.filter(
+          (v) => v.status === 'available' || v.id === alert?.assigned_vehicle_id
+        )
+      );
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -86,11 +89,13 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
   const handleVerify = async () => {
     try {
       setIsUpdating(true);
+      setMessage(null);
       const updatedAlert = await alertsAPI.updateStatus(alert.id, 'responding');
       onUpdateAlert(updatedAlert);
+      await fetchRespondersAndVehicles(); // FIX 3: Re-sync vehicle list after status change
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      setMessage({ type: 'error', text: 'Failed to update status.' });
     } finally {
       setIsUpdating(false);
     }
@@ -99,38 +104,41 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
   const handleResolve = async () => {
     try {
       setIsUpdating(true);
+      setMessage(null);
       const updatedAlert = await alertsAPI.updateStatus(alert.id, 'resolved');
       onUpdateAlert(updatedAlert);
+      await fetchRespondersAndVehicles(); // FIX 3: Re-sync vehicle list after status change
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      setMessage({ type: 'error', text: 'Failed to resolve alert.' });
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleAssignResponder = async () => {
+    // FIX 4: Use state message instead of alert()
     if (!selectedResponderId || !selectedVehicleId) {
-      alert('Please select both responder and vehicle');
+      setMessage({ type: 'error', text: 'Please select both a responder and a vehicle.' });
       return;
     }
 
     try {
       setIsUpdating(true);
-      
-      // Call your assign API
+      setMessage(null);
+
       const updatedAlert = await alertsAPI.assign(
-        alert.id, 
-        selectedVehicleId, 
+        alert.id,
+        selectedVehicleId,
         selectedResponderId
       );
 
-      console.log('Assignment successful:', updatedAlert);
       onUpdateAlert(updatedAlert);
-      alert('Responder and vehicle assigned successfully!');
+      await fetchRespondersAndVehicles(); // FIX 3: Re-sync after assign (vehicle is now 'assigned')
+      setMessage({ type: 'success', text: 'Responder and vehicle assigned successfully!' });
     } catch (error) {
       console.error('Error assigning:', error);
-      alert('Failed to assign responder');
+      setMessage({ type: 'error', text: 'Failed to assign responder.' });
     } finally {
       setIsUpdating(false);
     }
@@ -138,22 +146,21 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto ">
         <DialogHeader>
           <DialogTitle>Alert Details</DialogTitle>
-          <p className="text-sm text-muted-foreground">ID: #{alert.id}</p>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Status & Severity */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 capitalize justify-center">
             <Badge className={`px-4 py-2 ${severityColors[alert.severity]}`}>
               {alert.severity} Severity
             </Badge>
             <Badge className={`px-4 py-2 ${statusColors[alert.status]}`}>
               {alert.status}
             </Badge>
-            <Badge variant="secondary" className="px-4 py-2">
+            <Badge variant="secondary" className="px-4 py-2 capitalize">
               {alert.alert_type.replace("_", " ")}
             </Badge>
           </div>
@@ -174,8 +181,8 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                 <Info icon={<User size={18} />} label="Name">
                   {alert.user?.first_name} {alert.user?.last_name}
                 </Info>
-                <Info icon={<Smartphone size={18} />} label="Email">
-                  {alert.user?.email || "N/A"}
+                                <Info icon={<Smartphone size={18} />} label="Email">
+                  {alert?.user?.email ? String(alert.user.email).toLowerCase() : "N/A"}
                 </Info>
                 <Info icon={<Phone size={18} />} label="Phone">
                   {alert.user?.user_phone_number || "N/A"}
@@ -219,8 +226,8 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                     {/* Responder Selector */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Select Responder</label>
-                      <Select 
-                        value={selectedResponderId?.toString()} 
+                      <Select
+                        value={selectedResponderId?.toString()}
                         onValueChange={(value) => setSelectedResponderId(parseInt(value))}
                       >
                         <SelectTrigger>
@@ -232,7 +239,8 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                           ) : (
                             responders.map((responder) => (
                               <SelectItem key={responder.id} value={responder.id.toString()}>
-                                {responder.first_name} {responder.last_name} - {responder.user_phone_number || 'No phone'}
+                                {responder.first_name} {responder.last_name} — {responder.user_phone_number || 'No phone'}
+                                {responder.id === alert?.assigned_responder_id ? ' ✅ Currently Assigned' : ''}
                               </SelectItem>
                             ))
                           )}
@@ -243,8 +251,8 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                     {/* Vehicle Selector */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Select Vehicle</label>
-                      <Select 
-                        value={selectedVehicleId?.toString()} 
+                      <Select
+                        value={selectedVehicleId?.toString()}
                         onValueChange={(value) => setSelectedVehicleId(parseInt(value))}
                       >
                         <SelectTrigger>
@@ -255,8 +263,12 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                             <SelectItem value="none" disabled>No vehicles available</SelectItem>
                           ) : (
                             vehicles.map((vehicle) => (
+                              // FIX 2: Show vehicle status and currently assigned indicator
                               <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
-                                {vehicle.license_plate} - {vehicle.vehicle_type} ({vehicle.model})
+                                {vehicle.license_plate} — {vehicle.vehicle_type} ({vehicle.model})
+                                {vehicle.id === alert?.assigned_vehicle_id
+                                  ? ' ✅ Currently Assigned'
+                                  : ` — ${vehicle.status}`}
                               </SelectItem>
                             ))
                           )}
@@ -264,9 +276,16 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                       </Select>
                     </div>
 
+                    {/* FIX 4: Inline message display */}
+                    {message && (
+                      <p className={`text-sm font-medium ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                        {message.type === 'error' ? '⚠️' : '✅'} {message.text}
+                      </p>
+                    )}
+
                     {/* Assign Button */}
-                    <Button 
-                      onClick={handleAssignResponder} 
+                    <Button
+                      onClick={handleAssignResponder}
                       className="w-full"
                       disabled={!selectedResponderId || !selectedVehicleId || isUpdating}
                     >
@@ -289,7 +308,7 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                     <User size={16} className="text-green-600" />
                     <span>
                       <strong>Responder:</strong> {alert.responder.first_name} {alert.responder.last_name}
-                      {alert.responder.user_phone_number && ` - ${alert.responder.user_phone_number}`}
+                      {alert.responder.user_phone_number && ` — ${alert.responder.user_phone_number}`}
                     </span>
                   </div>
                 )}
@@ -297,8 +316,12 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
                   <div className="flex items-center gap-2 text-sm">
                     <Truck size={16} className="text-blue-600" />
                     <span>
-                      <strong>Vehicle:</strong> {alert.vehicle.license_plate} - {alert.vehicle.vehicle_type}
+                      <strong>Vehicle:</strong> {alert.vehicle.license_plate} — {alert.vehicle.vehicle_type}
                       {alert.vehicle.model && ` (${alert.vehicle.model})`}
+                      {/* FIX 2: Show live vehicle status */}
+                      <Badge className={`ml-2 text-xs ${alert.vehicle.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {alert.vehicle.status}
+                      </Badge>
                     </span>
                   </div>
                 )}
@@ -311,8 +334,8 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             {alert.status === "pending" && (
-              <Button 
-                onClick={handleVerify} 
+              <Button
+                onClick={handleVerify}
                 className="flex-1"
                 disabled={isUpdating}
               >
@@ -321,9 +344,9 @@ export default function AlertDetailsModal({ open, onOpenChange, alert, onUpdateA
               </Button>
             )}
             {alert.status !== "resolved" && (
-              <Button 
-                onClick={handleResolve} 
-                className="flex-1" 
+              <Button
+                onClick={handleResolve}
+                className="flex-1"
                 variant="outline"
                 disabled={isUpdating}
               >
@@ -343,7 +366,7 @@ function Info({ icon, label, children }) {
   return (
     <div className="flex items-start gap-2">
       <div className="text-muted-foreground mt-0.5">{icon}</div>
-      <div>
+      <div className="">
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="text-sm font-medium">{children}</p>
       </div>

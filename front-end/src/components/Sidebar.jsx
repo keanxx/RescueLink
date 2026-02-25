@@ -3,7 +3,8 @@ import {
   Home, Users, Palmtree, Briefcase, CardSim, UserCog,
   X, ChevronDown, ChevronsLeft, ChevronsRight, ShieldCheck,
   Printer, Map, SettingsIcon, AlertTriangle, LogOut,
-  Ambulance
+  Ambulance,
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,7 +13,12 @@ import { useAuth } from '@/features/auth/AuthContext';
 const sidebarItems = [
   { path: "/dashboard", label: "Dashboard", icon: Home },
   { path: "/map", label: "Live Map", icon: Map },
-  { path: "/alerts", label: "Alerts", icon: AlertTriangle },
+  { path: "/alerts", label: "Alerts", icon: AlertTriangle,
+    children:[
+       {path: "/alerts/active", label: "Active Alerts", icon: AlertTriangle},
+      {path: "/alerts/history", label: "Resolved Alerts", icon: ShieldCheck},
+    ]
+   },
   { path: "/users", label: "User Management", icon: UserCog },
   {path: "/vehicles", label: "Vehicle Management", icon: Ambulance },
   { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
@@ -47,17 +53,23 @@ const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {
 
       return (
         <div key={item.path || item.label} className={cn(!isCollapsed && `ml-${level * 4}`)}>
-          <Link 
-            to={item.path} 
-            className={cn(
-              "w-full flex items-center px-4 py-3 rounded-lg transition-colors",
-              isActive
-                ? "bg-red-50 text-red-600 font-medium"
-                : "text-gray-700 hover:bg-gray-100",
-              isCollapsed ? "justify-center" : "space-x-3"
-            )}
-            title={isCollapsed ? item.label : ""}
-          >
+        <Link
+          to={hasChildren ? "#" : item.path}
+          onClick={(e) => {
+            if (hasChildren) {
+              e.preventDefault();        // stop navigation
+              toggleSubmenu(item.path);  // open submenu
+            }
+          }}
+          className={cn(
+            "w-full flex items-center px-4 py-3 rounded-lg transition-colors",
+            isActive
+              ? "bg-red-50 text-red-600 font-medium"
+              : "text-gray-700 hover:bg-gray-100",
+            isCollapsed ? "justify-center" : "space-x-3"
+          )}
+          title={isCollapsed ? item.label : ""}
+        >
             {Icon && <Icon className="h-5 w-5" />}
             {!isCollapsed && <span>{item.label}</span>}
             {!isCollapsed && hasChildren && (

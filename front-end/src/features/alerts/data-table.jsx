@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import TableFilters from "./table-filters";
 
-export function DataTable({ columns, data }) {
+export function DataTable({ columns, data, hideStatusFilter }) {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
 
@@ -39,7 +39,7 @@ export function DataTable({ columns, data }) {
 
   return (
     <div className="space-y-4">
-      <TableFilters table={table} />
+      <TableFilters table={table} hideStatusFilter={hideStatusFilter} />
 
       <div className="rounded-lg border bg-card">
         <Table>

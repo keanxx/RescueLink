@@ -46,7 +46,7 @@ function MarkerWithClick({ position, icon, onClick }) {
 function AccidentMap({ alerts = [], selectedAlert = null, onMarkerClick }) {
   const [mapStyle, setMapStyle] = useState('street');
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
-
+const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 'cancelled');
   return (
     <div className="w-full h-full relative">
       {/* Layer Control */}
@@ -107,7 +107,7 @@ function AccidentMap({ alerts = [], selectedAlert = null, onMarkerClick }) {
         />
         
         {/* Markers without Popup - just click to open modal */}
-        {alerts.map((alert) => (
+        {activeAlerts.map((alert) => (
           <MarkerWithClick
             key={alert.id}
             position={[alert.latitude, alert.longitude]}

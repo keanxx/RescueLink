@@ -12,7 +12,7 @@ import { alertsAPI } from "@/api/alerts";
 import { useNavigate } from "react-router-dom";
 import { socket } from "@/lib/socket";
 
-export default function AlertsTable() {
+export default function AlertsTable({statusFilter}) {
   const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [deleteAlert, setDeleteAlert] = useState(null);
@@ -79,6 +79,12 @@ export default function AlertsTable() {
   const handleViewOnMap = (alert) => {
     navigate('/map', { state: { selectedAlert: alert } });
   };
+
+
+  const filteredAlerts = useMemo(() => {
+    if (!statusFilter) return alerts;
+    return alerts.filter(alert => statusFilter.includes(alert.status));
+  }, [alerts, statusFilter]);
 
   const handleView = async (alert) => {
     try {
@@ -161,7 +167,7 @@ export default function AlertsTable() {
         </div>
       </div>
 
-      <DataTable columns={columns} data={alerts} />
+      <DataTable columns={columns} data={filteredAlerts} hideStatusFilter={!!statusFilter} />
 
       <AlertDialog open={!!deleteAlert} onOpenChange={(open) => !open && setDeleteAlert(null)}>
         <AlertDialogContent>

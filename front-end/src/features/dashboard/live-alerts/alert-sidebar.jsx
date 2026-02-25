@@ -5,19 +5,22 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Clock, AlertCircle } from 'lucide-react';
 
 export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onViewDetails }) {
+
+  const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 'cancelled');
+
   return (
     <Card className="w-80">
       <CardContent className="p-4">
         <div className="mb-4">
           <h2 className="font-bold text-lg">Active Alerts</h2>
           <p className="text-xs text-muted-foreground">
-            Total Alerts ({alerts.length})
+            Total Alerts ({activeAlerts.length})
           </p>
         </div>
 
         <ScrollArea className="h-[650px]">
           <div className="space-y-2">
-            {alerts.map((alert) => (
+            {activeAlerts.map((alert) => (
               <div
                 key={alert.id}
                 onClick={() => onAlertSelect(alert)}

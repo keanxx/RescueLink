@@ -11,6 +11,7 @@ import Alerts from '@/pages/Alerts';
 import Register from '@/pages/Register';
 import Vehicles from '@/pages/Vehicles';
 import ReportAccident from '@/pages/ReportAccident';
+import History from '@/pages/alerts/History';
 
 export const router = createBrowserRouter([
   {
@@ -33,7 +34,8 @@ export const router = createBrowserRouter([
           {path: '/vehicles', element: <Vehicles /> },
           { path: '/settings', element: <Settings /> },
           { path: '/logs', element: <Logs /> },
-          { path: '/alerts', element: <Alerts /> },
+          { path: '/alerts/active', element: <Alerts /> },
+          {path: '/alerts/history', element: <History /> },
           {path: '/report-accident', element: <ReportAccident /> }
         ],
       },

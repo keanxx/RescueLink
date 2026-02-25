@@ -5,7 +5,7 @@ const Alerts = () => {
   return (
     <div className='space-y-6'>
 
-    <AlertsTable/>
+    <AlertsTable statusFilter={["pending", "responding"]} />
     </div>
   )
 }

@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function TableFilters({ table }) {
+export default function TableFilters({ table, hideStatusFilter }) {
   return (
     <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border">
       <Input
@@ -19,6 +19,7 @@ export default function TableFilters({ table }) {
         className="flex-1 min-w-[200px] focus-visible:ring-2 focus-visible:ring-red-500"
       />
 
+         {!hideStatusFilter && (
       <Select
         value={table.getColumn("status")?.getFilterValue() ?? "all"}
         onValueChange={(value) =>
@@ -36,7 +37,7 @@ export default function TableFilters({ table }) {
           <SelectItem value="cancelled">Cancelled</SelectItem>
         </SelectContent>
       </Select>
-
+     )}
       <Select
         value={table.getColumn("severity")?.getFilterValue() ?? "all"}
         onValueChange={(value) =>

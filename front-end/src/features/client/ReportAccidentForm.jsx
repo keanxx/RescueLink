@@ -15,7 +15,8 @@ export default function ReportAccidentForm() {
   
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  
+  const [imageFile, setImageFile] = useState(null);
+
   const [formData, setFormData] = useState({
     accident_type: '',
     severity: '',
@@ -253,128 +254,139 @@ export default function ReportAccidentForm() {
 
   // FORM SUBMIT HANDLER
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      console.log('📤 Submitting form data:', formData);
-      
-      // Validate required fields
-      if (!formData.accident_type || !formData.severity || !formData.location) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Missing Required Fields',
-          html: `
-            <p class="mb-2">Please fill in the following:</p>
-            <ul class="text-left text-sm">
-              ${!formData.accident_type ? '<li>• Type of Accident</li>' : ''}
-              ${!formData.severity ? '<li>• Severity Level</li>' : ''}
-              ${!formData.location ? '<li>• Location</li>' : ''}
-            </ul>
-          `,
-          confirmButtonColor: '#dc2626',
-        });
-        setLoading(false);
-        return;
-      }
+  try {
+    console.log('📤 Submitting form data:', formData);
 
-      // Build title
-      const title = formData.title || 
-        `${formData.accident_type} - ${formData.location.substring(0, 50)}`;
-
-      // Build description
-      const descriptionParts = [];
-      if (formData.description) descriptionParts.push(formData.description);
-      if (formData.vehicles_involved) descriptionParts.push(`Vehicles involved: ${formData.vehicles_involved}`);
-      if (formData.injuries) descriptionParts.push(`Injuries: ${formData.injuries}`);
-      if (formData.hazards) descriptionParts.push(`Hazards: ${formData.hazards}`);
-      const description = descriptionParts.join('\n');
-
-      // Prepare data for API
-      const cleanedData = {
-        alert_type: 'accident',
-        severity: formData.severity,
-        title: title.trim(),
-        description: description || null,
-        location: formData.location.trim(),
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        image_url: formData.image_url || null,
-      };
-
-      console.log('📤 Sending to API:', cleanedData);
-
-      // Submit to API
-      const result = await alertsAPI.create(cleanedData);
-
-      console.log('✅ Report submitted successfully:', result);
-
-      // Show success message
+    // Validate required fields
+    if (!formData.accident_type || !formData.severity || !formData.location) {
       Swal.fire({
-        icon: 'success',
-        title: 'Accident Reported!',
+        icon: 'warning',
+        title: 'Missing Required Fields',
         html: `
-          <div class="text-center">
-            <p class="text-lg font-semibold mb-3">🚨 Emergency services have been notified</p>
-            
-            <div class="bg-gray-50 p-4 rounded-lg mt-4 text-left space-y-2">
-              <p class="text-sm"><strong>Report ID:</strong> #${result.id}</p>
-              <p class="text-sm"><strong>Status:</strong> <span class="text-yellow-600 font-semibold">Pending Response</span></p>
-              <p class="text-sm"><strong>Severity:</strong> <span class="uppercase">${formData.severity}</span></p>
-              <p class="text-sm"><strong>Location:</strong> ${formData.location}</p>
-            </div>
-            
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-              <p class="text-sm text-blue-900">
-                📍 An ambulance and rescue team will be dispatched to your location shortly.
-              </p>
-            </div>
-            
-            <p class="text-base font-semibold text-red-600 mt-4">
-              🚑 Help is on the way!
+          <p class="mb-2">Please fill in the following:</p>
+          <ul class="text-left text-sm">
+            ${!formData.accident_type ? '<li>• Type of Accident</li>' : ''}
+            ${!formData.severity ? '<li>• Severity Level</li>' : ''}
+            ${!formData.location ? '<li>• Location</li>' : ''}
+          </ul>
+        `,
+        confirmButtonColor: '#dc2626',
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Build title
+    const title = formData.title ||
+      `${formData.accident_type} - ${formData.location.substring(0, 50)}`;
+
+    // Build description
+    const descriptionParts = [];
+    if (formData.description) descriptionParts.push(formData.description);
+    if (formData.vehicles_involved) descriptionParts.push(`Vehicles involved: ${formData.vehicles_involved}`);
+    if (formData.injuries) descriptionParts.push(`Injuries: ${formData.injuries}`);
+    if (formData.hazards) descriptionParts.push(`Hazards: ${formData.hazards}`);
+    const description = descriptionParts.join('\n');
+
+    // ✅ Step 1: Upload image to backend if a file was selected
+    let uploadedImageUrl = null;
+
+    if (imageFile) {
+      const imageFormData = new FormData();
+      imageFormData.append('image', imageFile);  // must match upload.single('image')
+
+      const uploadRes = await alertsAPI.uploadImage(imageFormData);
+      uploadedImageUrl = uploadRes.url;
+    }
+
+    // ✅ Step 2: Build cleaned data with the returned image URL
+    const cleanedData = {
+      alert_type: 'accident',
+      severity: formData.severity,
+      title: title.trim(),
+      description: description || null,
+      location: formData.location.trim(),
+      latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+      longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+      image_url: uploadedImageUrl,
+    };
+
+    console.log('📤 Sending to API:', cleanedData);
+
+    // ✅ Step 3: Submit alert to API
+    const result = await alertsAPI.create(cleanedData);
+
+    console.log('✅ Report submitted successfully:', result);
+
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Accident Reported!',
+      html: `
+        <div class="text-center">
+          <p class="text-lg font-semibold mb-3">🚨 Emergency services have been notified</p>
+          
+          <div class="bg-gray-50 p-4 rounded-lg mt-4 text-left space-y-2">
+            <p class="text-sm"><strong>Report ID:</strong> #${result.id}</p>
+            <p class="text-sm"><strong>Status:</strong> <span class="text-yellow-600 font-semibold">Pending Response</span></p>
+            <p class="text-sm"><strong>Severity:</strong> <span class="uppercase">${formData.severity}</span></p>
+            <p class="text-sm"><strong>Location:</strong> ${formData.location}</p>
+          </div>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+            <p class="text-sm text-blue-900">
+              📍 An ambulance and rescue team will be dispatched to your location shortly.
             </p>
           </div>
-        `,
-        confirmButtonColor: '#dc2626',
-        confirmButtonText: 'OK',
-        width: 600,
-      });
+          
+          <p class="text-base font-semibold text-red-600 mt-4">
+            🚑 Help is on the way!
+          </p>
+        </div>
+      `,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'OK',
+      width: 600,
+    });
 
-      // Reset form
-      setFormData({
-        accident_type: '',
-        severity: '',
-        title: '',
-        description: '',
-        location: '',
-        latitude: '',
-        longitude: '',
-        vehicles_involved: '1',
-        injuries: '',
-        hazards: '',
-        image_url: '',
-      });
-      
-    } catch (error) {
-      console.error('❌ Submit error:', error);
-      console.error('Error details:', error.response?.data);
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Submission Failed',
-        html: `
-          <p class="mb-2">Could not submit your report. Please try again.</p>
-          <div class="bg-red-50 p-3 rounded text-sm text-left mt-3">
-            <p><strong>Error:</strong> ${error?.response?.data?.message || error?.message || 'Unknown error'}</p>
-          </div>
-        `,
-        confirmButtonColor: '#dc2626',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Reset form and image file
+    setFormData({
+      accident_type: '',
+      severity: '',
+      title: '',
+      description: '',
+      location: '',
+      latitude: '',
+      longitude: '',
+      vehicles_involved: '1',
+      injuries: '',
+      hazards: '',
+    });
+    setImageFile(null);
+
+  } catch (error) {
+    console.error('❌ Submit error:', error);
+    console.error('Error details:', error.response?.data);
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Submission Failed',
+      html: `
+        <p class="mb-2">Could not submit your report. Please try again.</p>
+        <div class="bg-red-50 p-3 rounded text-sm text-left mt-3">
+          <p><strong>Error:</strong> ${error?.response?.data?.message || error?.message || 'Unknown error'}</p>
+        </div>
+      `,
+      confirmButtonColor: '#dc2626',
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // RENDER FORM
   
@@ -617,20 +629,21 @@ export default function ReportAccidentForm() {
               </div>
             </div>
 
-            {/* Image URL */}
-            <div className="space-y-2">
-              <Label>Photo URL (Optional)</Label>
-              <Input
-                className="focus:ring-2 focus:ring-red-500 focus:outline-none"
-                placeholder="https://example.com/accident-photo.jpg"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                disabled={loading}
-              />
-              <p className="text-xs text-gray-500">
-                Add a photo URL if available (file upload feature coming soon)
-              </p>
-            </div>
+            {/* Image Upload */}
+<div className="space-y-2">
+  <Label>Photo (Optional)</Label>
+  <Input
+    type="file"
+    accept="image/*"
+    className="focus:ring-2 focus:ring-red-500 focus:outline-none"
+    onChange={(e) => setImageFile(e.target.files[0] || null)}
+    disabled={loading}
+  />
+  {imageFile && (
+    <p className="text-xs text-gray-500">Selected: {imageFile.name}</p>
+  )}
+</div>
+
 
             {/* Submit Button */}
             <div className="pt-4">

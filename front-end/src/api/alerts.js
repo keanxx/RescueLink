@@ -21,6 +21,19 @@ export const alertsAPI = {
     }
   },
 
+  uploadImage: async (formData) => {
+    try {
+      const response = await api.post('/alerts/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Create alert (User reports accident)
   create: async (alertData) => {
     try {
@@ -74,3 +87,4 @@ export const alertsAPI = {
     }
   },
 };
+
